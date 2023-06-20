@@ -1,8 +1,15 @@
 # This script is intended to demonstrate the tools for causal discovery provided 
 # by the 'pcalg' R package.
 
-# installing pcalg
-# install.packages('pcalg')
+# We make sure that we have the necessary packages
+install.packages("BiocManager")
+
+BiocManager::install("Rgraphviz")
+BiocManager::install("graph")
+BiocManager::install("RBGL")
+
+install.packages("fastICA",dependencies = TRUE)
+install.packages("pcalg",dependencies = TRUE)
 
 
 library(pcalg)
@@ -152,7 +159,7 @@ plot(myDAG1, main = "randomDAG")
 
 
 # Generating 1000 observations from myDAG1 using standard normal error distribution
-n <- 1000
+n <- 10000
 d.normMat <- rmvDAG(n, myDAG1, errDist="normal")
 
 # Visualizing the distribution of the first four variables
@@ -177,8 +184,8 @@ plot(myDAG1, main = "True DAG")
 ## Using Gaussian Data
 ##################################################
 ## Load predefined data
-n <- nrow (gmG8$ x)
-V <- colnames(gmG8$ x) # labels aka node names
+n <- nrow (gmG8$x)
+V <- colnames(gmG8$x) # labels aka node names
 ## estimate CPDAG
 pc.fit <- pc(suffStat = list(C = cor(gmG8$x), n = n),
              indepTest = gaussCItest, ## indep.test: partial correlations
@@ -244,7 +251,46 @@ plot(pagrfci.est)
 mtext('RFCI',side=3)
 plot(gmL$g, main = "True Model")
 
-### Comparing graphs via Structural Hamming Distance
+####
+## Applying FCI to a data set WITHOUT hidden variables
+####
+data(gmG)
+n <- nrow (gmG8$x)
+V <- colnames(gmG8$x) # labels aka node names
+## estimate MAG
+fcinew.fit <- fci(suffStat = list(C = cor(gmG8$x), n = n),
+             indepTest = gaussCItest, ## indep.test: partial correlations
+             alpha=0.01, labels = V, verbose = FALSE)
+
+## show estimated CPDAG
+par(mfrow=c(1,2))
+plot(gmG8$g,main="True DAG")
+plot(fcinew.fit)
+mtext("FCI",side=3)
+
+
+
+####
+## Applying PC to a data set WITH hidden variables
+####
+data(gmL)
+n <- nrow (gml$x)
+V <- colnames(gmL$x) # labels aka node names
+## estimate CPDAG
+suffStat1 <- list(C = cor(gmL$x), n = nrow(gmL$x))
+pcnew.est <- pc(suffStat1, indepTest = gaussCItest, 
+                p = ncol(gmL$x), alpha = 0.01,
+                labels = as.character(2:5))
+
+## show estimated CPDAG
+par(mfrow=c(1,2))
+plot(gmL$g,main="True DAG")
+plot(pcnew.est,main="Estimated CPDAG")
+
+##################################################
+## Comparing graphs via Structural Hamming Distance
+##################################################
+
 Am <- rbind(c(0,1,0,0,1),
            c(0,0,0,1,1),
            c(1,0,0,1,0),
